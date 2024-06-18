@@ -1,27 +1,20 @@
-# lambda-finops-email-totals
+# lambda-finops-email-strides
 
-An AWS Lambda for emailing monthly totals to tagged resource owners
+An AWS Lambda for emailing monthly service totals for the current account
 
 ## Design
 
-This lambda will query Cost Explorer for our Owner Email cost category, query
-Synapse for the members of Team Sage, and email a monthly total to internal Sage
-users who have been tagged as resource owners.
+This lambda will query Cost Explorer for monthly service totals and S3 usage
+type totals, then email a report of the results to the given recipients.
 
 ### Parameters
 
-| Parameter Name     | Allowed Values                          | Default Value                           | Description                                                                          |
-| ------------------ | --------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
-| ScheduleExpression | EventBridge Schedule Expression         | `cron(30 10 2 * ? *)`                   | Schedule for running the lambda                                                      |
-| AdminEmail         | Any email address                       | `cloud-cost-notifications@sagebase.org` | Send a report on unowned costs to this address                                       |
-| SenderEmail        | Any email address                       | `cloud-cost-notifications@sagebase.org` | Value to use for the `From` email field                                              |
-| SkipRecipients     | Comma-delimited list of email addresses | `''`                                    | Never send emails to recipients in this list (recipient opt-out)                     |
-| MinimumValue       | Floating-point number                   | `1.0`                                   | Emails will not be sent for totals less than this amount                             |
-| SynapseDomain      | Valid domain, prepended with `@`        | `@synapse.org`                          | Email domain used by Synapse                                                         |
-| SynapseTeamId      | Synapse Team Id (numeric string)        | `273957`                                | Only send emails to synapse users if they are a member of this Team                  |
-| RestrictRecipients | `True` or `False`                       | `False`                                 | If `True` only send emails to recipients listed in `ApprovedRecipients`              |
-| ApprovedRecipients | Comma-delimited list of email addresses | `''`                                    | If `RestrictRecpipients` is `True`, then only send emails to recipients in this list |
-| CopyRecipients     | Comma-delimited list of email addresses | `''`                                    | CC this list of recipients on all emails                                             |
+| Parameter Name     | Allowed Values                          | Default Value                           | Description                                  |
+| ------------------ | --------------------------------------- | --------------------------------------- | -------------------------------------------- |
+| ScheduleExpression | EventBridge Schedule Expression         | `cron(30 10 2 * ? *)`                   | Schedule for running the lambda              |
+| MinimumValue       | Floating-point number                   | `0.01`                                  | Totals less than this amount will be ignored |
+| SenderEmail        | Any email address                       | `cloud-cost-notifications@sagebase.org` | Value to use for the `From` email field      |
+| Recipients         | Comma-delimited list of email addresses | `''`                                    | The list of email recipients                 |
 
 #### ScheduleExpression
 
@@ -29,10 +22,10 @@ users who have been tagged as resource owners.
 describing how often to run the lambda. By default it runs at 10:30am UTC on the
 2nd of each month.
 
-#### AdminEmail
+#### MinimumValue
 
-An administrative report summarizing unowned costs per account will be sent to
-this address.
+Don't send an email if the reported monthly total is less than this amount, by
+default $0.01.
 
 #### SenderEmail
 
@@ -40,40 +33,9 @@ This email address will appear is the `From` field, and must be
 [verified](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html)
 before emails will successfully send.
 
-#### SkipRecipients
+#### Recipients
 
-A skip list of email addresses. Any recipient listed here will be skipped,
-useful for recipients who want to opt-out of notifications.
-
-#### MinimumValue
-
-Don't send an email if the reported monthly total is less than this amount, by
-default $1.
-
-#### SynapseDomain
-
-The email domain used by Synapse. If an email recipient is at this domain, the
-recipient must also be a member of the listed Synapse team.
-
-#### SynapseTeamId
-
-Only send notifications to Synapse users if they are also a member of this team.
-This only affects email addresses matching SynapseDomain.
-
-#### RestrictRecipients
-
-Boolean value to toggle enforcing an `ApprovedRecipients` allow list of email
-recipients. Useful for testing.
-
-#### ApprovedRecipients
-
-An allow list of recipient addresses, any recipient not listed here will be
-skipped, only respected when `RestrictRecipients` is `True`. Does not override
-`SkipRecipients`. Useful for testing.
-
-#### CopyRecipients
-
-A list of email addresses to CC on all emails.
+The list of email recipients for email reports.
 
 ### Triggering
 
@@ -281,8 +243,7 @@ stack_name: "lambda-template"
 stack_tags:
   OwnerEmail: "it@sagebase.org"
 parameters:
-  RestrictRecipients: "True"
-  ApprovedRecipients: "canary1@example.com,canary2@example.com"
+  Recipients: "canary1@example.com,canary2@example.com"
 ```
 
 #### Exit SES Sandbox
@@ -304,6 +265,5 @@ stack_name: "lambda-template"
 stack_tags:
   OwnerEmail: "it@sagebase.org"
 parameters:
-  RestrictRecipients: "False"
-  CopyRecipients: "aws-costs@sagebase.org"
+  Recipients: "strides-admin@sagebase.org,cloud-audit@sagebase.org"
 ```

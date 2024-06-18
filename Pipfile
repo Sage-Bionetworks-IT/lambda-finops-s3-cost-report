@@ -6,11 +6,11 @@ verify_ssl = true
 [dev-packages]
 pytest = "~=7.1"
 pytest-mock = "~=3.8"
-boto3 = "~=1.24"
 coverage = "~=7.0"
+pre-commit = "~=3.7"
 
 [packages]
-synapseclient = "~=2.0"
+boto3 = "~=1.24"
 
 [requires]
-python_version = "3.9"
+python_version = "3.11"

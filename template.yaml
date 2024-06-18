@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  A lambda for sending monthly cloud-spend emails with a link to cost explorer
+  A lambda for sending monthly cloud-spend emails for STRIDES accounts
 
 Parameters:
   ScheduleExpression:
@@ -9,54 +9,21 @@ Parameters:
     Description: Schedule expressions using cron
     Default: cron(30 10 2 * ? *)
 
-  SenderEmail:
-    Type: String
-    Description: Sender Email Address
-    Default: '"Cloud Cost Notifications" <cloud-cost-notifications@sagebase.org>'
-
-  SkipRecipients:
-    Type: String
-    Description: Comma-separated list of email recipients to always skip
-    Default: ''
-
   MinimumValue:
     Type: String
-    Description: 'Minimum total to send an email. Default: $1.0'
-    Default: '1.0'
+    Description: 'Minimum total to send an email. Default: $0.01'
+    Default: '0.01'
     AllowedPattern: '^\d+(\.\d+)?$'
     ConstraintDescription: 'must be a floating point number'
 
-  RestrictRecipients:
+  Sender:
     Type: String
-    Description: Whether or not to restict sending emails to approved addresses
-    Default: "False"
-    AllowedValues:
-      - "True"
-      - "False"
-
-  ApprovedRecipients:
-    Type: String
-    Description: Comma-separated list of approved email recipients
-    Default: ''
-
-  SynapseTeamId:
-    Type: String
-    Description: Synapse ID for Team Sage
-    Default: '273957'
-
-  SynapseTeamDomain:
-    Type: String
-    Description: Email domain used by Synapse
-    Default: '@synapse.org'
-
-  AdminEmail:
-    Type: String
-    Description: Email recipient for admin notifications (e.g. uncategorized costs)
+    Description: Sender email address
     Default: '"Cloud Cost Notifications" <cloud-cost-notifications@sagebase.org>'
 
-  CopyRecipients:
+  Recipients:
     Type: String
-    Description: Comma-separated list of email recipients to CC on all reports
+    Description: Comma-separated list of email recipients
     Default: ''
 
 
@@ -91,8 +58,6 @@ Resources:
                  - "logs:CreateLogStream"
                  - "logs:DescribeLogStreams"
                  - "logs:PutLogEvents"
-                 - "organizations:ListAccounts"
-                 - "organizations:ListTagsForResource"
                  - "ses:SendEmail"
               Resource: "*"
               Effect: Allow
@@ -101,22 +66,16 @@ Resources:
   MonthlyServicesUsage:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: email_totals/app.lambda_handler
+      Handler: email_strides/app.lambda_handler
       CodeUri: .
-      Runtime: python3.9
+      Runtime: python3.11
       MemorySize: 128
       Role: !GetAtt MonthlyServicesUsageLambdaRole.Arn
       Environment:
         Variables:
-          ADMIN_EMAIL: !Ref AdminEmail
-          SENDER: !Ref SenderEmail
-          RESTRICT: !Ref RestrictRecipients
-          APPROVED: !Ref ApprovedRecipients
-          SKIPLIST: !Ref SkipRecipients
+          SENDER: !Ref Sender
+          RECIPIENTS: !Ref Recipients
           MINIMUM: !Ref MinimumValue
-          SYNAPSE_TEAM_ID: !Ref SynapseTeamId
-          SYNAPSE_TEAM_DOMAIN: !Ref SynapseTeamDomain
-          CC_LIST: !Ref CopyRecipients
       Events:
         ScheduledEventTrigger:
           Type: Schedule
