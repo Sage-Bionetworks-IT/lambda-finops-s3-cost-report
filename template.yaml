@@ -1,67 +1,139 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Hello World lambda
+  A lambda for sending monthly cloud-spend emails with a link to cost explorer
 
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: "lambda-template"
-    Description: "A GH template for quickly starting a new AWS lambda project."
-    Author: "Sage-Bionetworks"
-    SpdxLicenseId: "Apache-2.0"
-    # paths are relative to .aws-sam/build directory
-    LicenseUrl: "LICENSE"
-    ReadmeUrl: "README.md"
-    Labels: ["serverless", "template", "github", "quick-start"]
-    HomePageUrl: "https://github.com/Sage-Bionetworks-IT/lambda-template"
-    SemanticVersion: "0.0.3"
-    SourceCodeUrl: "https://github.com/Sage-Bionetworks-IT/lambda-template/tree/0.0.3"
+Parameters:
+  ScheduleExpression:
+    Type: String
+    Description: Schedule expressions using cron
+    Default: cron(30 10 2 * ? *)
+
+  SenderEmail:
+    Type: String
+    Description: Sender Email Address
+    Default: '"Cloud Cost Notifications" <cloud-cost-notifications@sagebase.org>'
+
+  SkipRecipients:
+    Type: String
+    Description: Comma-separated list of email recipients to always skip
+    Default: ''
+
+  MinimumValue:
+    Type: String
+    Description: 'Minimum total to send an email. Default: $1.0'
+    Default: '1.0'
+    AllowedPattern: '^\d+(\.\d+)?$'
+    ConstraintDescription: 'must be a floating point number'
+
+  RestrictRecipients:
+    Type: String
+    Description: Whether or not to restict sending emails to approved addresses
+    Default: "False"
+    AllowedValues:
+      - "True"
+      - "False"
+
+  ApprovedRecipients:
+    Type: String
+    Description: Comma-separated list of approved email recipients
+    Default: ''
+
+  SynapseTeamId:
+    Type: String
+    Description: Synapse ID for Team Sage
+    Default: '273957'
+
+  SynapseTeamDomain:
+    Type: String
+    Description: Email domain used by Synapse
+    Default: '@synapse.org'
+
+  AdminEmail:
+    Type: String
+    Description: Email recipient for admin notifications (e.g. uncategorized costs)
+    Default: '"Cloud Cost Notifications" <cloud-cost-notifications@sagebase.org>'
+
+  CopyRecipients:
+    Type: String
+    Description: Comma-separated list of email recipients to CC on all reports
+    Default: ''
+
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 30
+    Timeout: 120
 
 Resources:
-  HelloWorldFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Properties:
-      CodeUri: .
-      Handler: hello_world/app.lambda_handler
-      Runtime: python3.9
-      Role: !GetAtt FunctionRole.Arn
-      Events:
-        HelloWorld:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            Path: /hello
-            Method: get
-
-  FunctionRole:   # execute lambda function with this role
+#lambda execution role config
+  MonthlyServicesUsageLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
+          Version: '2012-10-17'
+          Statement:
+          - Sid: 'LambdaSSMAssume'
+            Effect: Allow
             Principal:
               Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+              - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaAccess
+          PolicyDocument:
+            Statement:
+            - Action:
+                 - "ce:Describe*"
+                 - "ce:Get*"
+                 - "ce:List*"
+                 - "logs:CreateLogGroup"
+                 - "logs:CreateLogStream"
+                 - "logs:DescribeLogStreams"
+                 - "logs:PutLogEvents"
+                 - "organizations:ListAccounts"
+                 - "organizations:ListTagsForResource"
+                 - "ses:SendEmail"
+              Resource: "*"
+              Effect: Allow
+
+#This Lambda Function will fetch Billing details for AWS linked Account and will send it over mail.
+  MonthlyServicesUsage:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: email_totals/app.lambda_handler
+      CodeUri: .
+      Runtime: python3.9
+      MemorySize: 128
+      Role: !GetAtt MonthlyServicesUsageLambdaRole.Arn
+      Environment:
+        Variables:
+          ADMIN_EMAIL: !Ref AdminEmail
+          SENDER: !Ref SenderEmail
+          RESTRICT: !Ref RestrictRecipients
+          APPROVED: !Ref ApprovedRecipients
+          SKIPLIST: !Ref SkipRecipients
+          MINIMUM: !Ref MinimumValue
+          SYNAPSE_TEAM_ID: !Ref SynapseTeamId
+          SYNAPSE_TEAM_DOMAIN: !Ref SynapseTeamDomain
+          CC_LIST: !Ref CopyRecipients
+      Events:
+        ScheduledEventTrigger:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref ScheduleExpression
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref MonthlyServicesUsage
+      Principal: 'events.amazonaws.com'
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunctionArn:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionRoleArn:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt FunctionRole.Arn
+  MonthlyServicesUsageFunctionArn:
+    Description: "MonthlyServicesUsage Lambda Function ARN"
+    Value: !GetAtt MonthlyServicesUsage.Arn
+  MonthlyServicesUsageFunctionRoleArn:
+    Description: "IAM Role created for MonthlyServicesUsage function"
+    Value: !GetAtt MonthlyServicesUsageLambdaRole.Arn

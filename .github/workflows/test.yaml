@@ -9,24 +9,24 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
-      - uses: pre-commit/action@v3.0.1
+      - uses: pre-commit/action@v3.0.0
 
   pytest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - run: pip install -U pipenv
       - run: pipenv install --dev
-      - run: pipenv run coverage run -m pytest tests/ -vv
+      - run: pipenv run coverage run -m pytest tests/ -svv
       - name: upload coverage to coveralls
         uses: coverallsapp/github-action@v2
         with:
@@ -35,6 +35,6 @@ jobs:
   sam-build-and-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/sam-build
       - run: sam validate --lint --template .aws-sam/build/template.yaml
