@@ -56,7 +56,7 @@ def get_ce_s3_usage_costs(period):
             "Dimensions": {
                 "Key": "SERVICE",
                 "Values": [
-                    "s3",
+                    "Amazon Simple Storage Service",
                 ],
                 "MatchOptions": ["EQUALS"],
             }

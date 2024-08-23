@@ -47,6 +47,10 @@ s3_usage_type3_total = 0.0
 s3_usage_type3_previous = 0.0
 s3_usage_type3_change = 0.0
 
+s3_usage_type4_name = "type4"
+s3_usage_type4_total = 1.0
+s3_usage_type4_change = 1.0
+
 
 # App fixtures
 
@@ -80,6 +84,10 @@ def mock_app_s3_usage_dict():
         s3_usage_type3_name: {
             "total": s3_usage_type3_total,
             "change": s3_usage_type3_change,
+        },
+        s3_usage_type4_name: {
+            "total": s3_usage_type4_total,
+            "change": s3_usage_type4_change
         },
     }
     return response
@@ -135,6 +143,7 @@ def mock_ce_s3_usage_target_data():
         s3_usage_type1_name: s3_usage_type1_total,
         s3_usage_type2_name: s3_usage_type2_total,
         s3_usage_type3_name: s3_usage_type3_total,
+        s3_usage_type4_name: s3_usage_type4_total,
     }
     return mock_ce_response(target_totals)
 

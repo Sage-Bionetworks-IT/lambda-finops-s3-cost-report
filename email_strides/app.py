@@ -63,7 +63,8 @@ def parse_results_by_time(results_by_time, compare=None):
     for result in results_by_time:
         for group in result["Groups"]:
             amount = float(group["Metrics"][ce.cost_metric]["Amount"])
-            if amount < minimum:
+            if minimum != 0 and amount < minimum:
+                LOG.warning(f"Skipping amount ({amount}) less than minimum ({minimum}")
                 continue
 
             if len(group["Keys"]) != 1:

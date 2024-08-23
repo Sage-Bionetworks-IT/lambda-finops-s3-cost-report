@@ -175,7 +175,7 @@ def build_email_body(service_data, s3_usage_data):
 
     service_prose = "\nBreak-down of total monthly costs by service:"
     s3_usage_prose = "\nBreak-down of monthly S3 costs by usage type:"
-    no_data_prose = f"\nNo data greater than the minimum value ({minimum}) found"
+    no_data_prose = f"\nNo matching data found "
 
     title = "AWS Monthly Cost Summary"
     html_body = f"<h3>{title}</h3>"
