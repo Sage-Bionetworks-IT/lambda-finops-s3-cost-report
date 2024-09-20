@@ -19,7 +19,6 @@ Parameters:
   Sender:
     Type: String
     Description: Sender email address
-    Default: '"Cloud Cost Notifications" <cloud-cost-notifications@sagebase.org>'
 
   Recipients:
     Type: String

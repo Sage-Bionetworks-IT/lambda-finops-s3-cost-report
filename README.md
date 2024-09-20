@@ -1,6 +1,6 @@
 # lambda-finops-email-strides
 
-An AWS Lambda for emailing monthly service totals for the current account
+An AWS Lambda for emailing monthly S3 service totals for the current account.
 
 ## Design
 
@@ -9,12 +9,12 @@ type totals, then email a report of the results to the given recipients.
 
 ### Parameters
 
-| Parameter Name     | Allowed Values                          | Default Value                           | Description                                  |
-| ------------------ | --------------------------------------- | --------------------------------------- | -------------------------------------------- |
-| ScheduleExpression | EventBridge Schedule Expression         | `cron(30 10 2 * ? *)`                   | Schedule for running the lambda              |
-| MinimumValue       | Floating-point number                   | `0.01`                                  | Totals less than this amount will be ignored |
-| SenderEmail        | Any email address                       | `cloud-cost-notifications@sagebase.org` | Value to use for the `From` email field      |
-| Recipients         | Comma-delimited list of email addresses | `''`                                    | The list of email recipients                 |
+| Parameter Name     | Allowed Values                          | Default Value         | Description                                  |
+| ------------------ |-----------------------------------------| ----------------------|----------------------------------------------|
+| ScheduleExpression | EventBridge Schedule Expression         | `cron(30 10 2 * ? *)` | Schedule for running the lambda              |
+| MinimumValue       | Floating-point number                   | `0.01`                | Totals less than this amount will be ignored |
+| SenderEmail        | SES verified identity                   | `''`                  | Value to use for the `From` email <br/>field |
+| Recipients         | Comma-delimited list of email addresses | `''`                  | The list of email recipients                 |
 
 #### ScheduleExpression
 
