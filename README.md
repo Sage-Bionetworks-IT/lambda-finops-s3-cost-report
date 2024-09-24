@@ -64,7 +64,7 @@ repo.
 
 ### Install Requirements
 
-Run `pipenv install --dev` to install both production and development
+Run `pipenv sync --dev` to install both production and development
 requirements, and `pipenv shell` to activate the virtual environment. For more
 information see the [pipenv docs](https://pipenv.pypa.io/en/latest/).
 
