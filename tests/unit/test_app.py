@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from email_strides import app
+from s3_cost_report import app
 
 # fixtures for datetime processing around year boundaries
 
@@ -77,7 +77,7 @@ def test_service_costs(
     mocker.patch.dict(os.environ, env_vars)
 
     mocker.patch(
-        "email_strides.ce.get_ce_service_costs",
+        "s3_cost_report.ce.get_ce_service_costs",
         side_effect=[
             mock_ce_service_compare_data,
             mock_ce_service_target_data,
@@ -105,7 +105,7 @@ def test_s3_usage_costs(
     mocker.patch.dict(os.environ, env_vars)
 
     mocker.patch(
-        "email_strides.ce.get_ce_s3_usage_costs",
+        "s3_cost_report.ce.get_ce_s3_usage_costs",
         side_effect=[
             mock_ce_s3_usage_compare_data,
             mock_ce_s3_usage_target_data,

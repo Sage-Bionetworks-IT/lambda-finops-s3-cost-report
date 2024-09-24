@@ -1,7 +1,7 @@
 import pytest
 from botocore.stub import Stubber
 
-from email_strides import ce
+from s3_cost_report import ce
 
 
 def test_ce_service(mock_ce_period, mock_ce_service_target_data):

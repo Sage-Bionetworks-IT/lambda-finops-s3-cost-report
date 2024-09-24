@@ -1,4 +1,4 @@
-# lambda-finops-email-strides
+# lambda-finops-s3-cost-report
 
 An AWS Lambda for emailing monthly S3 service totals for the current account.
 
@@ -10,7 +10,7 @@ type totals, then email a report of the results to the given recipients.
 ### Parameters
 
 | Parameter Name     | Allowed Values                          | Default Value         | Description                                  |
-| ------------------ |-----------------------------------------| ----------------------|----------------------------------------------|
+| ------------------ | --------------------------------------- | --------------------- | -------------------------------------------- |
 | ScheduleExpression | EventBridge Schedule Expression         | `cron(30 10 2 * ? *)` | Schedule for running the lambda              |
 | MinimumValue       | Floating-point number                   | `0.01`                | Totals less than this amount will be ignored |
 | SenderEmail        | SES verified identity                   | `''`                  | Value to use for the `From` email <br/>field |
@@ -64,9 +64,9 @@ repo.
 
 ### Install Requirements
 
-Run `pipenv sync --dev` to install both production and development
-requirements, and `pipenv shell` to activate the virtual environment. For more
-information see the [pipenv docs](https://pipenv.pypa.io/en/latest/).
+Run `pipenv sync --dev` to install both production and development requirements,
+and `pipenv shell` to activate the virtual environment. For more information see
+the [pipenv docs](https://pipenv.pypa.io/en/latest/).
 
 After activating the virtual environment, run `pre-commit install` to install
 the [pre-commit](https://pre-commit.com/) git hook.

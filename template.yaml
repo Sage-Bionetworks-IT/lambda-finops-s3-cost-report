@@ -63,7 +63,7 @@ Resources:
   MonthlyServicesUsage:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: email_strides/app.lambda_handler
+      Handler: s3_cost_report/app.lambda_handler
       CodeUri: .
       Runtime: python3.11
       MemorySize: 128

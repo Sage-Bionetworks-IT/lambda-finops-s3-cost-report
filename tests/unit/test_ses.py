@@ -3,7 +3,7 @@ import os
 import pytest
 from botocore.stub import Stubber
 
-from email_strides import ses
+from s3_cost_report import ses
 
 
 def test_send_email(mocker, mock_ses_response):

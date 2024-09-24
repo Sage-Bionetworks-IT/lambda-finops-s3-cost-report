@@ -5,7 +5,7 @@ import pytest
 # This needs to be set when the modules are loaded,
 # but its value is not used when running tests
 os.environ["AWS_DEFAULT_REGION"] = "test-region"
-from email_strides import ce
+from s3_cost_report import ce
 
 # Constants used by fixtures
 

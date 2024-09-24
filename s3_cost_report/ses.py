@@ -21,7 +21,7 @@ ses_client = boto3.client("ses", config=ses_config)
 
 def _table_row_style(i):
     """
-    Alternating table row background colors
+    Alternating table row background colors.
     """
     if i % 2 == 0:
         return "style='background-color: WhiteSmoke;'"
@@ -30,6 +30,9 @@ def _table_row_style(i):
 
 
 def build_paragraph(text, html=False):
+    """
+    Format a text block as a paragraph.
+    """
     output = ""
 
     if html:
@@ -43,6 +46,7 @@ def build_paragraph(text, html=False):
             "</tr></table>"
         )
     else:
+        # Just add a newline
         output += text + "\n"
 
     return output
@@ -50,9 +54,9 @@ def build_paragraph(text, html=False):
 
 def build_service_table(services, html=False):
     """
-    Build table for service costs
+    Build a table from a dictionary of service totals.
 
-    Example usage block:
+    Example input block:
     ```
     ec2:
         total: 10.0
@@ -64,6 +68,7 @@ def build_service_table(services, html=False):
 
     output = ""
 
+    # Table header
     if html:
         output += (
             "<table border='1' padding='10' width='600' "
@@ -79,6 +84,7 @@ def build_service_table(services, html=False):
             + "\n"
         )
 
+    # Table rows
     for service in services:
         # Round dollar total to 2 decimal places
         total = f"${services[service]['total']:.2f}"
@@ -99,6 +105,7 @@ def build_service_table(services, html=False):
             _td = [service, total, change]
             output += "\t".join(_td) + "\n"
 
+    # Table end
     if html:
         output += "</table><br/>"
 
@@ -107,9 +114,9 @@ def build_service_table(services, html=False):
 
 def build_usage_table(usages, html=False):
     """
-    Build table S3 usage costs
+    Build a table from a dictionary of S3 usage costs
 
-    Example usage block:
+    Example input block:
     ```
     s3-bytes-out:
         total: 10.0
@@ -122,6 +129,7 @@ def build_usage_table(usages, html=False):
     output = ""
     total = "Total"
 
+    # Table header
     if html:
         output += (
             "<table border='1' padding='10' width='600' "
@@ -137,6 +145,7 @@ def build_usage_table(usages, html=False):
             + "\n"
         )
 
+    # Table rows
     for usage_type in usages:
         # Round dollar total to 2 decimal places
         total = f"${usages[usage_type]['total']:.2f}"
@@ -160,6 +169,7 @@ def build_usage_table(usages, html=False):
             _td = [usage_type, total, change]
             output += "\t".join(_td) + "\n"
 
+    # Table end
     if html:
         output += "</table><br/>"
 
@@ -168,14 +178,16 @@ def build_usage_table(usages, html=False):
 
 def build_email_body(service_data, s3_usage_data):
     """
-    Generate an email body summarizing costs
+    Compose the email bodies (both a plain-text and HTML version), with
+    a table for service costs, and a table for S3 usage type costs.
     """
 
+    # Ignore totals under this amount
     minimum = float(os.environ["MINIMUM"])
 
     service_prose = "\nBreak-down of total monthly costs by service:"
     s3_usage_prose = "\nBreak-down of monthly S3 costs by usage type:"
-    no_data_prose = f"\nNo matching data found "
+    no_data_prose = "\nNo matching data found "
 
     title = "AWS Monthly Cost Summary"
     html_body = f"<h3>{title}</h3>"
@@ -210,16 +222,17 @@ def build_email_body(service_data, s3_usage_data):
 
 def send_email(subject, body_html, body_text):
     """
-    Send e-mail through SES
+    Send an e-mail through SES with both a text body and an HTML body.
     """
 
+    # Sender and Recipients are configured from env vars.
     sender = os.environ["SENDER"]
     recipients = os.environ["RECIPIENTS"].split(",")
 
     # Python3 uses UTF-8
     charset = "UTF-8"
 
-    # Try to send the email.
+    # Send the email.
     try:
         response = ses_client.send_email(
             Destination={

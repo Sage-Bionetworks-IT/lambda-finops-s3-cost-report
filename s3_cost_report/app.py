@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime
 
-from email_strides import ce, ses
+from s3_cost_report import ce, ses
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
