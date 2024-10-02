@@ -1,4 +1,4 @@
-name: sam-build
+name: sam-build-and-lint
 
 runs:
   # This creates a composite action to be used as a step in a job
@@ -21,6 +21,14 @@ runs:
       with:
         use-installer: true
 
+    # Lint the input template
+    - run: sam validate --lint
+      shell: bash
+
     # Use a lambda-like docker container to build the lambda artifact
     - run: sam build --use-container
+      shell: bash
+
+    # Lint the built template
+    - run: sam validate --lint --template .aws-sam/build/template.yaml
       shell: bash

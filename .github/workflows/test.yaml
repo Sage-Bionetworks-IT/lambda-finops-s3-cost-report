@@ -38,5 +38,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/sam-build
-      - run: sam validate --lint --template .aws-sam/build/template.yaml
+      - uses: ./.github/actions/sam-build-and-lint

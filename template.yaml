@@ -4,18 +4,6 @@ Description: >
   A lambda for sending monthly cloud-spend emails for STRIDES accounts
 
 Parameters:
-  ScheduleExpression:
-    Type: String
-    Description: Schedule expressions using cron
-    Default: cron(30 10 2 * ? *)
-
-  MinimumValue:
-    Type: String
-    Description: 'Minimum total to send an email. Default: $0.01'
-    Default: '0.01'
-    AllowedPattern: '^\d+(\.\d+)?$'
-    ConstraintDescription: 'must be a floating point number'
-
   Sender:
     Type: String
     Description: Sender email address
@@ -24,6 +12,16 @@ Parameters:
     Type: String
     Description: Comma-separated list of email recipients
 
+  OmitCostsLessThan:
+    Type: Number
+    Description: 'Totals less than this amount will not be reported. Default: $0.01'
+    Default: '0.01'
+
+  ScheduleExpression:
+    Type: String
+    Description: EventBridge Schedule Expression
+    Default: cron(30 10 2 * ? *)
+
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
@@ -31,7 +29,7 @@ Globals:
 
 Resources:
 #lambda execution role config
-  MonthlyServicesUsageLambdaRole:
+  MonthlyS3UsageLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -59,20 +57,20 @@ Resources:
               Resource: "*"
               Effect: Allow
 
-#This Lambda Function will fetch Billing details for AWS linked Account and will send it over mail.
-  MonthlyServicesUsage:
+# This Lambda will query Cost Explorer for costs related to S3
+  MonthlyS3Usage:
     Type: AWS::Serverless::Function
     Properties:
       Handler: s3_cost_report/app.lambda_handler
       CodeUri: .
       Runtime: python3.11
       MemorySize: 128
-      Role: !GetAtt MonthlyServicesUsageLambdaRole.Arn
+      Role: !GetAtt MonthlyS3UsageLambdaRole.Arn
       Environment:
         Variables:
           SENDER: !Ref Sender
           RECIPIENTS: !Ref Recipients
-          MINIMUM: !Ref MinimumValue
+          MINIMUM: !Ref OmitCostsLessThan
       Events:
         ScheduledEventTrigger:
           Type: Schedule
@@ -83,13 +81,13 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref MonthlyServicesUsage
+      FunctionName: !Ref MonthlyS3Usage
       Principal: 'events.amazonaws.com'
 
 Outputs:
-  MonthlyServicesUsageFunctionArn:
-    Description: "MonthlyServicesUsage Lambda Function ARN"
-    Value: !GetAtt MonthlyServicesUsage.Arn
-  MonthlyServicesUsageFunctionRoleArn:
-    Description: "IAM Role created for MonthlyServicesUsage function"
-    Value: !GetAtt MonthlyServicesUsageLambdaRole.Arn
+  MonthlySe3UsageFunctionArn:
+    Description: "MonthlyS3Usage Lambda Function ARN"
+    Value: !GetAtt MonthlyS3Usage.Arn
+  MonthlyS3UsageFunctionRoleArn:
+    Description: "IAM Role created for MonthlyS3Usage function"
+    Value: !GetAtt MonthlyS3UsageLambdaRole.Arn
