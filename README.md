@@ -4,8 +4,9 @@ An AWS Lambda for emailing monthly S3 service totals for the current account.
 
 ## Design
 
-This lambda will query Cost Explorer for monthly service totals and S3 usage
-type totals, then email a report of the results to the given recipients.
+This lambda will query Cost Explorer for monthly totals grouped by service, and
+also S3-specific totals grouped by S3 usage type (e.g. bytes transferred), then
+send an email report of the results to the given recipients.
 
 ### Parameters
 
