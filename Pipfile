@@ -8,6 +8,7 @@ pytest = "~=8.3"
 pytest-mock = "~=3.8"
 coverage = "~=7.0"
 pre-commit = "~=4.0"
+aws-sam-cli = "~=1.0"
 
 [packages]
 boto3 = "~=1.24"

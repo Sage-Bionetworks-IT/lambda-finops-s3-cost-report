@@ -2,10 +2,16 @@ import logging
 import os
 from datetime import datetime
 
+import boto3
+
 from s3_cost_report import ce, ses
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
+
+
+iam_client = boto3.client("iam")
+sts_client = boto3.client("sts")
 
 
 def report_periods(today):
@@ -64,7 +70,7 @@ def parse_results_by_time(results_by_time, compare=None):
         for group in result["Groups"]:
             amount = float(group["Metrics"][ce.cost_metric]["Amount"])
             if minimum != 0 and amount < minimum:
-                LOG.warning(f"Skipping amount ({amount}) less than minimum ({minimum}")
+                LOG.warning(f"Skipping amount ({amount}) less than minimum ({minimum})")
                 continue
 
             if len(group["Keys"]) != 1:
@@ -166,6 +172,13 @@ def lambda_handler(event, context):
     changes for both service and usage-type totals.
     """
 
+    # Get account name (default to ID if no Alias is set)
+    account = sts_client.get_caller_identity()['Account']
+    aliases = iam_client.list_account_aliases()['AccountAliases']
+    # aliases will have at most one element
+    if len(aliases) > 0:
+        account = aliases[0]
+
     # Calculate the reporting periods to send to cost explorer
     now = datetime.now()
     target_month, compare_month = report_periods(now)
@@ -177,7 +190,7 @@ def lambda_handler(event, context):
     # Name of the target period for the email subject
     _dt = datetime.fromisoformat(target_month["Start"])
     email_period = _dt.strftime("%B %Y")  # Month Year
-    email_subject = f"AWS Monthly Cost Report ({email_period})"
+    email_subject = f"AWS Monthly Cost Report ({account} {email_period})"
 
     # Create and send report
     email_html, email_text = ses.build_email_body(per_service, s3_usage)

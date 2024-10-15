@@ -2,8 +2,10 @@ import os
 from datetime import datetime
 
 import pytest
+from botocore.stub import Stubber
 
 from s3_cost_report import app
+
 
 # fixtures for datetime processing around year boundaries
 
@@ -59,9 +61,11 @@ expected_compare_feb = {
 )
 def test_report_periods(test_now, expected_target_period, expected_compare_period):
     test_dt = datetime.fromisoformat(test_now)
-    found_target, found_compare = app.report_periods(test_dt)
-    assert found_target == expected_target_period
-    assert found_compare == expected_compare_period
+    with Stubber(app.sts_client) as _sts:
+        with Stubber(app.iam_client) as _iam:
+            found_target, found_compare = app.report_periods(test_dt)
+            assert found_target == expected_target_period
+            assert found_compare == expected_compare_period
 
 
 def test_service_costs(
@@ -84,12 +88,14 @@ def test_service_costs(
         ],
     )
 
-    # target and compare periods are passed through to patched functions
-    found_dict = app.get_service_costs(
-        mock_ce_period,
-        mock_ce_period,
-    )
-    assert found_dict == mock_app_service_dict
+    with Stubber(app.sts_client) as _sts:
+        with Stubber(app.iam_client) as _iam:
+            # target and compare periods are passed through to patched functions
+            found_dict = app.get_service_costs(
+                mock_ce_period,
+                mock_ce_period,
+            )
+            assert found_dict == mock_app_service_dict
 
 
 def test_s3_usage_costs(
@@ -112,9 +118,12 @@ def test_s3_usage_costs(
         ],
     )
 
-    # period input doesn't matter since it's only passed to patched functions
-    found_dict = app.get_s3_usage_costs(
-        mock_ce_period,
-        mock_ce_period,
-    )
-    assert found_dict == mock_app_s3_usage_dict
+    with Stubber(app.sts_client) as _sts:
+        with Stubber(app.iam_client) as _iam:
+
+            # period input doesn't matter since it's only passed to patched functions
+            found_dict = app.get_s3_usage_costs(
+                mock_ce_period,
+                mock_ce_period,
+            )
+            assert found_dict == mock_app_s3_usage_dict

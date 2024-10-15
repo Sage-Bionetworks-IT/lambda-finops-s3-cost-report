@@ -49,6 +49,7 @@ Resources:
                  - "ce:Describe*"
                  - "ce:Get*"
                  - "ce:List*"
+                 - "iam:ListAccountAliases"
                  - "logs:CreateLogGroup"
                  - "logs:CreateLogStream"
                  - "logs:DescribeLogStreams"
