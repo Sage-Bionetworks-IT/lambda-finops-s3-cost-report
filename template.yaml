@@ -63,7 +63,7 @@ Resources:
     Properties:
       Handler: s3_cost_report/app.lambda_handler
       CodeUri: .
-      Runtime: python3.11
+      Runtime: python3.12
       MemorySize: 128
       Role: !GetAtt MonthlyS3UsageLambdaRole.Arn
       Environment:
