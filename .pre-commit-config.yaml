@@ -23,7 +23,12 @@ repos:
     rev: v1.5.5
     hooks:
     -   id: remove-tabs
--   repo: https://github.com/aristanetworks/j2lint.git
-    rev: v1.1.0
-    hooks:
-      - id: j2lint
+- repo: https://github.com/executablebooks/mdformat
+  rev: 0.7.18  # Use the ref you want to point at
+  hooks:
+  - id: mdformat
+    # Optionally add plugins
+    additional_dependencies:
+    - mdformat-gfm  # github-flavored markdown
+    files: README.md
+    args: [--wrap=80]

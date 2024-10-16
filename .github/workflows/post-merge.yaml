@@ -24,8 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Install sam-cli and run "sam build"
-      - uses: ./.github/actions/sam-build
+      # install sam-cli, build, and lint
+      - uses: ./.github/actions/sam-build-and-lint
 
       # authenticate with AWS via OIDC
       - uses: aws-actions/configure-aws-credentials@v4
@@ -38,5 +38,8 @@ jobs:
       # upload the lambda artifact to s3 and generate a cloudformation template referencing it
       - run: sam package --template-file .aws-sam/build/template.yaml --s3-bucket $ESSENTIALS_BUCKET --s3-prefix ${{ github.event.repository.name }}/${{ github.ref_name }} --output-template-file .aws-sam/build/${{ github.event.repository.name }}.yaml
 
-      # upload the generated cloudformation template to s3
+      # validate final template with cloudformation
+      - run: aws cloudformation validate-template --template-body file://.aws-sam/build/${{ github.event.repository.name }}.yaml
+
+      # upload the final template to s3
       - run: aws s3 cp .aws-sam/build/${{ github.event.repository.name }}.yaml s3://$BOOTSTRAP_BUCKET/${{ github.event.repository.name }}/${{ github.ref_name }}/

@@ -1,67 +1,94 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Hello World lambda
+  A lambda for sending monthly cloud-spend emails for STRIDES accounts
 
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: "lambda-template"
-    Description: "A GH template for quickly starting a new AWS lambda project."
-    Author: "Sage-Bionetworks"
-    SpdxLicenseId: "Apache-2.0"
-    # paths are relative to .aws-sam/build directory
-    LicenseUrl: "LICENSE"
-    ReadmeUrl: "README.md"
-    Labels: ["serverless", "template", "github", "quick-start"]
-    HomePageUrl: "https://github.com/Sage-Bionetworks-IT/lambda-template"
-    SemanticVersion: "0.0.3"
-    SourceCodeUrl: "https://github.com/Sage-Bionetworks-IT/lambda-template/tree/0.0.3"
+Parameters:
+  Sender:
+    Type: String
+    Description: Sender email address
+
+  Recipients:
+    Type: String
+    Description: Comma-separated list of email recipients
+
+  OmitCostsLessThan:
+    Type: Number
+    Description: 'Totals less than this amount will not be reported. Default: $0.01'
+    Default: '0.01'
+
+  ScheduleExpression:
+    Type: String
+    Description: EventBridge Schedule Expression
+    Default: cron(30 10 2 * ? *)
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 30
+    Timeout: 120
 
 Resources:
-  HelloWorldFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Properties:
-      CodeUri: .
-      Handler: hello_world/app.lambda_handler
-      Runtime: python3.9
-      Role: !GetAtt FunctionRole.Arn
-      Events:
-        HelloWorld:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            Path: /hello
-            Method: get
-
-  FunctionRole:   # execute lambda function with this role
+#lambda execution role config
+  MonthlyS3UsageLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
+          Version: '2012-10-17'
+          Statement:
+          - Sid: 'LambdaSSMAssume'
+            Effect: Allow
             Principal:
               Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+              - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaAccess
+          PolicyDocument:
+            Statement:
+            - Action:
+                 - "ce:Describe*"
+                 - "ce:Get*"
+                 - "ce:List*"
+                 - "iam:ListAccountAliases"
+                 - "logs:CreateLogGroup"
+                 - "logs:CreateLogStream"
+                 - "logs:DescribeLogStreams"
+                 - "logs:PutLogEvents"
+                 - "ses:SendEmail"
+              Resource: "*"
+              Effect: Allow
+
+# This Lambda will query Cost Explorer for costs related to S3
+  MonthlyS3Usage:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: s3_cost_report/app.lambda_handler
+      CodeUri: .
+      Runtime: python3.12
+      MemorySize: 128
+      Role: !GetAtt MonthlyS3UsageLambdaRole.Arn
+      Environment:
+        Variables:
+          SENDER: !Ref Sender
+          RECIPIENTS: !Ref Recipients
+          MINIMUM: !Ref OmitCostsLessThan
+      Events:
+        ScheduledEventTrigger:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref ScheduleExpression
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref MonthlyS3Usage
+      Principal: 'events.amazonaws.com'
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunctionArn:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionRoleArn:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt FunctionRole.Arn
+  MonthlySe3UsageFunctionArn:
+    Description: "MonthlyS3Usage Lambda Function ARN"
+    Value: !GetAtt MonthlyS3Usage.Arn
+  MonthlyS3UsageFunctionRoleArn:
+    Description: "IAM Role created for MonthlyS3Usage function"
+    Value: !GetAtt MonthlyS3UsageLambdaRole.Arn
