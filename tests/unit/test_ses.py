@@ -27,12 +27,14 @@ def test_send_email(mocker, mock_ses_response):
 
 
 def test_email_body(mocker, mock_app_service_dict, mock_app_s3_usage_dict):
-    # assert no exceptions are raised
+    account_id = 'ACCOUNT_ID'
+
     env_vars = {
         "MINIMUM": "0.01"
     }
     mocker.patch.dict(os.environ, env_vars)
 
-    html, text = ses.build_email_body(mock_app_service_dict, mock_app_s3_usage_dict)
+    # assert no exceptions are raised
+    html, text = ses.build_email_body(account_id, mock_app_service_dict, mock_app_s3_usage_dict)
     print(html)
     print(text)
