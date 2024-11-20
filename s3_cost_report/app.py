@@ -193,5 +193,5 @@ def lambda_handler(event, context):
     email_subject = f"AWS Monthly Cost Report ({account} {email_period})"
 
     # Create and send report
-    email_html, email_text = ses.build_email_body(per_service, s3_usage)
+    email_html, email_text = ses.build_email_body(account, per_service, s3_usage)
     ses.send_email(email_subject, email_html, email_text)

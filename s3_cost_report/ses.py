@@ -176,7 +176,7 @@ def build_usage_table(usages, html=False):
     return output
 
 
-def build_email_body(service_data, s3_usage_data):
+def build_email_body(account, service_data, s3_usage_data):
     """
     Compose the email bodies (both a plain-text and HTML version), with
     a table for service costs, and a table for S3 usage type costs.
@@ -187,9 +187,9 @@ def build_email_body(service_data, s3_usage_data):
 
     service_prose = "\nBreak-down of total monthly costs by service:"
     s3_usage_prose = "\nBreak-down of monthly S3 costs by usage type:"
-    no_data_prose = "\nNo matching data found "
+    no_data_prose = "\nNo data found for"
 
-    title = "AWS Monthly Cost Summary"
+    title = f"AWS Monthly Cost Summary for Account {account}"
     html_body = f"<h3>{title}</h3>"
     text_body = f"{title}\n"
 
@@ -200,7 +200,7 @@ def build_email_body(service_data, s3_usage_data):
         html_body += build_service_table(service_data, True)
         text_body += build_service_table(service_data, False)
     else:
-        no_service_data = f"{no_data_prose} for service totals"
+        no_service_data = f"{no_data_prose} service totals\n"
         html_body += build_paragraph(no_service_data, True)
         text_body += build_paragraph(service_prose, False)
 
@@ -211,7 +211,7 @@ def build_email_body(service_data, s3_usage_data):
         html_body += build_usage_table(s3_usage_data, True)
         text_body += build_usage_table(s3_usage_data, False)
     else:
-        no_s3_usage_data = f"{no_data_prose} for S3 usage totals"
+        no_s3_usage_data = f"{no_data_prose} S3 usage totals\n"
         html_body += build_paragraph(no_s3_usage_data, True)
         text_body += build_paragraph(service_prose, False)
 
