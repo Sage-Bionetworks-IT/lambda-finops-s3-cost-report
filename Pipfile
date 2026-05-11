@@ -8,10 +8,10 @@ pytest = "~=8.3"
 pytest-mock = "~=3.8"
 coverage = "~=7.0"
 pre-commit = "~=4.0"
-aws-sam-cli = "~=1.138"
+aws-sam-cli = "~=1.161"
 
 [packages]
-boto3 = "~=1.24"
+boto3 = "==1.43.7"
 
 [requires]
 python_version = "3.12"
